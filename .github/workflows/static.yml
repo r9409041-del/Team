@@ -1,0 +1,2149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>أرشيف التيم Pro | بيئة تطوير وإدارة مشاريع الويب</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Cairo & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            slatebg: {
+              950: '#080c14',
+              900: '#0d1117',
+              850: '#121822',
+              800: '#161b22',
+              700: '#21262d',
+              600: '#30363d',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+    /* Code Editor Line Numbers & Alignment */
+    .editor-wrapper {
+      position: relative;
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      background-color: #0d1117;
+    }
+    .line-gutter {
+      width: 50px;
+      padding: 16px 8px;
+      text-align: right;
+      background-color: #121822;
+      color: #6e7681;
+      font-family: 'Fira Code', monospace;
+      font-size: 13.5px;
+      line-height: 1.65;
+      user-select: none;
+      border-right: 1px solid #30363d;
+      overflow: hidden;
+    }
+    .code-area {
+      flex: 1;
+      padding: 16px;
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: 'Fira Code', monospace;
+      font-size: 13.5px;
+      line-height: 1.65;
+      border: none;
+      outline: none;
+      resize: none;
+      tab-size: 2;
+      white-space: pre;
+      overflow: auto;
+      direction: ltr;
+      text-align: left;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-toast { animation: slideUp 0.25s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-slatebg-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white">
+
+  <!-- ==================== TOAST NOTIFICATIONS ==================== -->
+  <div id="toastContainer" class="fixed bottom-5 left-5 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- ==================== 1. SECURE LOGIN SCREEN ==================== -->
+  <section id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/40 via-slatebg-950 to-slatebg-950">
+    <div class="max-w-md w-full bg-slatebg-850/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slatebg-600/80 p-8 sm:p-10">
+      <div class="flex flex-col items-center text-center mb-8">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-emerald-500 flex items-center justify-center text-white text-3xl shadow-xl shadow-indigo-500/20 mb-4">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-white">أرشيف التيم <span class="text-indigo-400">Pro</span></h1>
+        <p class="text-xs text-slate-400 mt-1.5">بيئة تطوير وإدارة مشاريع الويب المعتمدة للفريق</p>
+      </div>
+
+      <div id="loginError" class="hidden mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2.5">
+        <i class="fa-solid fa-shield-xmark text-base shrink-0"></i>
+        <span>بيانات الاعتماد غير صحيحة. الوصول مقصور على أعضاء الفريق المصرح لهم.</span>
+      </div>
+
+      <form id="loginForm" class="space-y-5">
+        <div>
+          <label for="emailInput" class="block text-xs font-bold mb-2 text-slate-300">البريد الإلكتروني للعضو</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 right-3.5 flex items-center text-slate-500">
+              <i class="fa-solid fa-envelope"></i>
+            </span>
+            <input
+              type="email"
+              id="emailInput"
+              dir="ltr"
+              required
+              autocomplete="off"
+              placeholder="member@team-archive.com"
+              class="w-full pr-10 pl-4 py-3 rounded-xl bg-slatebg-900 border border-slatebg-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-left font-mono text-white transition"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="passwordInput" class="block text-xs font-bold mb-2 text-slate-300">كلمة المرور</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 right-3.5 flex items-center text-slate-500">
+              <i class="fa-solid fa-key"></i>
+            </span>
+            <input
+              type="password"
+              id="passwordInput"
+              dir="ltr"
+              required
+              placeholder="••••••••••••"
+              class="w-full pr-10 pl-10 py-3 rounded-xl bg-slatebg-900 border border-slatebg-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-left font-mono text-white transition"
+            />
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 left-3.5 flex items-center text-slate-500 hover:text-slate-200">
+              <i id="eyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2"
+        >
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>دخول بيئة العمل</span>
+        </button>
+      </form>
+
+      <div class="mt-7 pt-5 border-t border-slatebg-700 text-center">
+        <p class="text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-lock text-emerald-500"></i>
+          <span>بوابة مشفرة • مخصصة لأعضاء الفريق فقط</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2. MAIN WORKSPACE ==================== -->
+  <div id="appWorkspace" class="hidden flex-col h-screen overflow-hidden">
+
+    <!-- Top Global Navigation Bar -->
+    <header class="h-16 bg-slatebg-850 border-b border-slatebg-600 px-3 sm:px-5 flex items-center justify-between shrink-0 z-30 gap-2">
+      <!-- Brand & Main Tabs -->
+      <div class="flex items-center gap-3 sm:gap-5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-emerald-500 flex items-center justify-center text-white font-bold shadow">
+            <i class="fa-solid fa-code"></i>
+          </div>
+          <div class="hidden md:block">
+            <h1 class="text-sm font-black leading-none text-white">أرشيف التيم <span class="text-indigo-400">Pro</span></h1>
+            <span class="text-[10px] text-slate-400">Team Web Engineering Hub</span>
+          </div>
+        </div>
+
+        <!-- View Switcher -->
+        <nav class="flex items-center bg-slatebg-900 p-1 rounded-xl border border-slatebg-600">
+          <button id="navArchiveBtn" onclick="switchMainView('archive')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>استكشاف الأرشيف</span>
+            <span id="headerArchiveCount" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-white/20 text-white">0</span>
+          </button>
+          <button id="navEditorBtn" onclick="switchMainView('editor')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-300 hover:text-white">
+            <i class="fa-solid fa-laptop-code"></i>
+            <span>بيئة التطوير (IDE)</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Current Role Info & Logout -->
+      <div class="flex items-center gap-2.5">
+        <div class="hidden sm:flex items-center gap-2.5 bg-slatebg-900 border border-slatebg-600 px-3 py-1.5 rounded-xl">
+          <div id="userAvatar" class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div class="text-right">
+            <div class="flex items-center gap-1.5">
+              <span id="currentUserName" class="text-xs font-bold text-white">قائد التيم</span>
+              <span id="currentUserRole" class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-semibold">System Architect</span>
+            </div>
+            <p id="currentUserEmail" class="text-[10px] font-mono text-slate-400" dir="ltr">admin@team-archive.com</p>
+          </div>
+        </div>
+
+        <button onclick="logout()" class="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 text-xs font-bold transition flex items-center gap-1.5" title="تسجيل الخروج">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span class="hidden md:inline">خروج</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== VIEW 1: ARCHIVE EXPLORER COMMAND CENTER ==================== -->
+    <div id="archiveExplorerView" class="flex-1 overflow-y-auto bg-slatebg-950 p-4 sm:p-6 lg:p-8">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <!-- M15: Workspace Analytics Dashboard -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-slatebg-850 border border-slatebg-600 rounded-2xl p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-lg shrink-0">
+              <i class="fa-solid fa-folder-tree"></i>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold">إجمالي المشاريع</p>
+              <h3 id="statTotalProjects" class="text-xl font-black text-white font-mono">0</h3>
+            </div>
+          </div>
+
+          <div class="bg-slatebg-850 border border-slatebg-600 rounded-2xl p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg shrink-0">
+              <i class="fa-solid fa-rocket"></i>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold">جاهز للنشر (Production)</p>
+              <h3 id="statProdProjects" class="text-xl font-black text-emerald-400 font-mono">0</h3>
+            </div>
+          </div>
+
+          <div class="bg-slatebg-850 border border-slatebg-600 rounded-2xl p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-lg shrink-0">
+              <i class="fa-solid fa-code"></i>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold">إجمالي الأسطر البرمجية</p>
+              <h3 id="statTotalLines" class="text-xl font-black text-white font-mono">0</h3>
+            </div>
+          </div>
+
+          <div class="bg-slatebg-850 border border-slatebg-600 rounded-2xl p-4 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-lg shrink-0">
+              <i class="fa-solid fa-hard-drive"></i>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold">حجم الأرشيف الكلي</p>
+              <h3 id="statTotalSize" class="text-xl font-black text-white font-mono">0 KB</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Command Header & Backup Controls -->
+        <div class="bg-slatebg-850 border border-slatebg-600 rounded-3xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg sm:text-xl font-extrabold text-white flex items-center gap-2">
+              <i class="fa-solid fa-box-archive text-indigo-400"></i>
+              <span>مركز قيادة وأرشيف مشاريع التيم</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              كل مشروع يضم ملفات <span class="font-mono text-orange-400">index.html</span> و <span class="font-mono text-sky-400">style.css</span> و <span class="font-mono text-amber-400">script.js</span> مع سجل إصدارات ومهام خاصة.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="createNewProject(true)" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/20 transition flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i>
+              <span>مشروع جديد</span>
+            </button>
+
+            <button onclick="exportArchiveJson()" class="px-3.5 py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-bold transition flex items-center gap-2">
+              <i class="fa-solid fa-file-export"></i>
+              <span>تصدير الأرشيف (JSON)</span>
+            </button>
+
+            <label class="cursor-pointer px-3.5 py-2.5 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 text-xs font-bold transition flex items-center gap-2">
+              <i class="fa-solid fa-file-import text-indigo-400"></i>
+              <span>استيراد (JSON)</span>
+              <input type="file" accept=".json,application/json" onchange="importArchiveJson(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Advanced Filter & Layout Bar -->
+        <div class="bg-slatebg-850 border border-slatebg-600 rounded-2xl p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          <!-- Search -->
+          <div class="relative flex-1">
+            <span class="absolute inset-y-0 right-3.5 flex items-center text-slate-400 text-sm">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+            <input
+              type="text"
+              id="archiveSearchInput"
+              oninput="renderArchiveExplorer()"
+              placeholder="ابحث باسم المشروع، الوصف، الوسوم (Tags)، أو الكود..."
+              class="w-full pr-10 pl-4 py-2.5 rounded-xl bg-slatebg-900 border border-slatebg-600 focus:border-indigo-500 outline-none text-xs text-white transition"
+            />
+          </div>
+
+          <!-- Filters -->
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="filterScopeSelect" onchange="renderArchiveExplorer()" class="px-3 py-2.5 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs font-bold text-slate-200 outline-none focus:border-indigo-500">
+              <option value="ALL">جميع المشاريع</option>
+              <option value="PINNED">المثبتة والمفضلة ⭐</option>
+              <option value="MINE">مشاريعي فقط</option>
+            </select>
+
+            <select id="filterStatusSelect" onchange="renderArchiveExplorer()" class="px-3 py-2.5 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs font-bold text-slate-200 outline-none focus:border-indigo-500">
+              <option value="ALL">كل الحالات</option>
+              <option value="Production">جاهز للنشر (Production)</option>
+              <option value="Review">قيد المراجعة (Review)</option>
+              <option value="Draft">مسودة (Draft)</option>
+            </select>
+
+            <!-- Grid vs Table Toggle -->
+            <div class="flex items-center bg-slatebg-900 p-1 rounded-xl border border-slatebg-600">
+              <button id="viewGridBtn" onclick="setArchiveViewMode('grid')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-grip"></i>
+                <span>بطاقات</span>
+              </button>
+              <button id="viewTableBtn" onclick="setArchiveViewMode('table')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white text-xs font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-table-list"></i>
+                <span>جدول</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Projects Grid View -->
+        <div id="archiveGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+        <!-- Projects Table View -->
+        <div id="archiveTableContainer" class="hidden bg-slatebg-850 border border-slatebg-600 rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-right border-collapse">
+              <thead>
+                <tr class="bg-slatebg-900 border-b border-slatebg-600 text-xs font-bold text-slate-300">
+                  <th class="py-3.5 px-4">المشروع</th>
+                  <th class="py-3.5 px-4">الحالة والأولوية</th>
+                  <th class="py-3.5 px-4">المسؤول</th>
+                  <th class="py-3.5 px-4">آخر تحديث</th>
+                  <th class="py-3.5 px-4 text-center">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="archiveTableBody" class="divide-y divide-slatebg-700 text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== VIEW 2: PRO MULTI-FILE IDE WORKSPACE ==================== -->
+    <div id="ideWorkspaceView" class="hidden flex-1 flex-col overflow-hidden bg-slatebg-950">
+
+      <!-- IDE Top Project Metadata & Action Ribbon -->
+      <div class="bg-slatebg-850 border-b border-slatebg-600 px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        
+        <!-- Project Title, Status, Priority & Save -->
+        <div class="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
+          <input
+            type="text"
+            id="ideProjectTitle"
+            placeholder="اسم المشروع..."
+            class="w-44 sm:w-56 px-3 py-1.5 rounded-xl bg-slatebg-900 border border-slatebg-600 focus:border-indigo-500 outline-none text-xs font-bold text-white"
+          />
+
+          <!-- M10: Status & Priority -->
+          <select id="ideProjectStatus" class="px-2.5 py-1.5 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs font-bold text-emerald-400 outline-none">
+            <option value="Draft">مسودة (Draft)</option>
+            <option value="Review">قيد المراجعة (Review)</option>
+            <option value="Production">جاهز للنشر (Production)</option>
+          </select>
+
+          <select id="ideProjectPriority" class="px-2.5 py-1.5 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs font-bold text-amber-400 outline-none">
+            <option value="عالية">أولوية عالية 🔥</option>
+            <option value="متوسطة" selected>أولوية متوسطة</option>
+            <option value="عادية">أولوية عادية</option>
+          </select>
+
+          <button onclick="saveCurrentProject(true)" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>حفظ ولقطة</span>
+          </button>
+        </div>
+
+        <!-- Engineering Power Tools Ribbon -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <!-- M4: Snippets -->
+          <button onclick="openModal('snippetsModal')" class="px-2.5 py-1.5 rounded-xl bg-slatebg-700 hover:bg-indigo-600 text-slate-200 hover:text-white text-xs font-bold transition flex items-center gap-1.5" title="مكتبة القوالب والمكونات الجاهزة">
+            <i class="fa-solid fa-puzzle-piece text-indigo-400"></i>
+            <span class="hidden xl:inline">قوالب جاهزة</span>
+          </button>
+
+          <!-- M5: CDN Injector -->
+          <button onclick="openModal('cdnModal')" class="px-2.5 py-1.5 rounded-xl bg-slatebg-700 hover:bg-indigo-600 text-slate-200 hover:text-white text-xs font-bold transition flex items-center gap-1.5" title="محقن المكتبات الخارجية السريع">
+            <i class="fa-solid fa-plug text-sky-400"></i>
+            <span class="hidden xl:inline">مكتبات CDN</span>
+          </button>
+
+          <!-- M7: Beautify / Minify -->
+          <button onclick="formatActiveCode()" class="px-2.5 py-1.5 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 text-xs font-bold transition flex items-center gap-1" title="تنسيق الكود تلقائياً (Beautify)">
+            <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
+            <span class="hidden lg:inline">تنسيق</span>
+          </button>
+
+          <button onclick="minifyActiveCode()" class="px-2.5 py-1.5 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 text-xs font-bold transition flex items-center gap-1" title="ضغط وتصغير الكود (Minify)">
+            <i class="fa-solid fa-compress-arrows-alt text-amber-400"></i>
+          </button>
+
+          <!-- M8: Code Audit & Linter -->
+          <button onclick="runCodeAudit()" class="px-2.5 py-1.5 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 text-xs font-bold transition flex items-center gap-1.5" title="فحص جودة الكود والـ SEO">
+            <i class="fa-solid fa-stethoscope text-emerald-400"></i>
+            <span class="hidden lg:inline">فحص الجودة</span>
+          </button>
+
+          <!-- M3: Version History -->
+          <button onclick="openHistoryModal()" class="px-2.5 py-1.5 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 text-xs font-bold transition flex items-center gap-1.5" title="سجل الإصدارات والرجوع للخلف">
+            <i class="fa-solid fa-clock-rotate-left text-orange-400"></i>
+            <span class="hidden xl:inline">الإصدارات</span>
+          </button>
+
+          <!-- M11: Notes & Checklist Drawer Toggle -->
+          <button onclick="toggleProjectDrawer()" class="px-2.5 py-1.5 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 text-xs font-bold transition flex items-center gap-1.5" title="مهام وملاحظات المشروع">
+            <i class="fa-solid fa-list-check text-pink-400"></i>
+            <span class="hidden xl:inline">المهام</span>
+          </button>
+
+          <!-- M14: Multi-Format Export & Share -->
+          <button onclick="openExportModal()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5" title="تصدير ونشر ومشاركة المشروع">
+            <i class="fa-solid fa-share-nodes"></i>
+            <span>نشر وتصدير</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Split Container (+ Optional Side Drawer for Notes/Tasks) -->
+      <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Split Screen: Left/Right Code & Preview -->
+        <div id="ideSplitGrid" class="flex-1 grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
+
+          <!-- PANE 1: MULTI-FILE CODE EDITOR (M1) -->
+          <div id="ideEditorPane" class="flex flex-col border-b lg:border-b-0 lg:border-l border-slatebg-600 overflow-hidden h-full">
+            
+            <!-- File Tabs + Find/Replace Trigger (M9) -->
+            <div class="bg-slatebg-800 px-3 py-1.5 border-b border-slatebg-600 flex items-center justify-between gap-2 shrink-0">
+              <div class="flex items-center gap-1" dir="ltr">
+                <button onclick="switchEditorTab('html')" data-ftab="html" class="file-tab px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slatebg-900 text-orange-400 border border-slatebg-600 flex items-center gap-1.5">
+                  <i class="fa-brands fa-html5"></i> index.html
+                </button>
+                <button onclick="switchEditorTab('css')" data-ftab="css" class="file-tab px-3 py-1 rounded-lg text-xs font-mono font-bold text-slate-400 hover:text-white flex items-center gap-1.5">
+                  <i class="fa-brands fa-css3-alt text-sky-400"></i> style.css
+                </button>
+                <button onclick="switchEditorTab('js')" data-ftab="js" class="file-tab px-3 py-1 rounded-lg text-xs font-mono font-bold text-slate-400 hover:text-white flex items-center gap-1.5">
+                  <i class="fa-brands fa-js text-amber-400"></i> script.js
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <!-- M9: Find & Replace Toggle -->
+                <button onclick="toggleFindReplaceBar()" class="px-2 py-1 rounded-lg bg-slatebg-700 hover:bg-slatebg-600 text-slate-300 text-[11px] font-bold flex items-center gap-1" title="بحث واستبدال داخل الملف">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <span class="hidden sm:inline">بحث واستبدال</span>
+                </button>
+                <span id="ideCursorPos" class="text-[11px] font-mono text-slate-400 hidden sm:inline" dir="ltr">Ln 1, Col 1</span>
+              </div>
+            </div>
+
+            <!-- M9: Collapsible Find & Replace Bar -->
+            <div id="findReplaceBar" class="hidden bg-slatebg-850 border-b border-slatebg-600 px-3 py-2 flex flex-wrap items-center gap-2 text-xs">
+              <input type="text" id="findInput" oninput="updateFindCount()" placeholder="ابحث عن نص أو وسم..." class="px-2.5 py-1 rounded-lg bg-slatebg-900 border border-slatebg-600 text-white font-mono text-xs outline-none w-40" dir="ltr" />
+              <input type="text" id="replaceInput" placeholder="استبدال بـ..." class="px-2.5 py-1 rounded-lg bg-slatebg-900 border border-slatebg-600 text-white font-mono text-xs outline-none w-40" dir="ltr" />
+              <span id="findMatchCount" class="text-[11px] font-mono text-indigo-400">0 مطابقة</span>
+              <button onclick="replaceNextMatch()" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold">استبدال التالي</button>
+              <button onclick="replaceAllMatches()" class="px-2.5 py-1 rounded-lg bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 font-bold">استبدال الكل</button>
+              <button onclick="toggleFindReplaceBar()" class="mr-auto text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Editor Area -->
+            <div class="editor-wrapper" dir="ltr">
+              <div id="ideLineGutter" class="line-gutter">1</div>
+              <textarea
+                id="ideCodeTextarea"
+                class="code-area"
+                spellcheck="false"
+                autocapitalize="off"
+                autocomplete="off"
+                autocorrect="off"
+                placeholder="// اكتب الكود هنا..."
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- PANE 2: VIEWPORT SIMULATOR + LIVE CONSOLE (M2 & M6) -->
+          <div id="idePreviewPane" class="flex flex-col bg-slatebg-900 overflow-hidden h-full">
+            
+            <!-- M6: Responsive Viewport Simulator Bar -->
+            <div class="bg-slatebg-800 px-3 py-1.5 border-b border-slatebg-600 flex items-center justify-between gap-2 text-xs shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="font-bold text-slate-200 hidden sm:inline">المعاينة الحية</span>
+                <span id="viewportDimBadge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-slatebg-900 text-indigo-400 border border-slatebg-600" dir="ltr">100% (Responsive)</span>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <button onclick="setSimulatorViewport('100%', 'Responsive')" class="sim-btn px-2 py-1 rounded bg-indigo-600 text-white text-[11px] font-bold" title="ملء العرض">
+                  <i class="fa-solid fa-desktop"></i>
+                </button>
+                <button onclick="setSimulatorViewport('1024px', '1024×768 Laptop')" class="sim-btn px-2 py-1 rounded bg-slatebg-700 text-slate-300 hover:text-white text-[11px]" title="لابتوب 1024px">
+                  <i class="fa-solid fa-laptop"></i>
+                </button>
+                <button onclick="setSimulatorViewport('768px', '768×1024 Tablet')" class="sim-btn px-2 py-1 rounded bg-slatebg-700 text-slate-300 hover:text-white text-[11px]" title="تابلت 768px">
+                  <i class="fa-solid fa-tablet-screen-button"></i>
+                </button>
+                <button onclick="setSimulatorViewport('375px', '375×812 Mobile')" class="sim-btn px-2 py-1 rounded bg-slatebg-700 text-slate-300 hover:text-white text-[11px]" title="موبايل 375px">
+                  <i class="fa-solid fa-mobile-screen-button"></i>
+                </button>
+                <button onclick="renderLivePreview(true)" class="px-2 py-1 rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white text-[11px] font-bold mr-1" title="إعادة تشغيل المعاينة">
+                  <i class="fa-solid fa-rotate-right"></i>
+                </button>
+                <button onclick="togglePreviewFullscreen()" class="px-2 py-1 rounded bg-slatebg-700 text-slate-300 hover:text-white text-[11px]" title="تكبير المعاينة">
+                  <i id="previewExpandIcon" class="fa-solid fa-expand"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Iframe Container -->
+            <div class="flex-1 bg-[#06090f] flex justify-center overflow-auto p-0 sm:p-2">
+              <iframe
+                id="ideLiveIframe"
+                title="معاينة المشروع المباشرة"
+                class="bg-white w-full h-full rounded-none sm:rounded-xl shadow-2xl border border-slatebg-600 transition-all duration-300"
+              ></iframe>
+            </div>
+
+            <!-- M2: Live Console & Error Inspector Drawer -->
+            <div class="bg-slatebg-850 border-t border-slatebg-600 flex flex-col shrink-0">
+              <div class="px-3 py-1.5 flex items-center justify-between text-xs cursor-pointer hover:bg-slatebg-800" onclick="toggleConsoleBody()">
+                <div class="flex items-center gap-2 font-mono font-bold">
+                  <i class="fa-solid fa-terminal text-indigo-400"></i>
+                  <span>Console</span>
+                  <span id="consoleBadgeCount" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slatebg-700 text-slate-300">0</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="event.stopPropagation(); clearLiveConsole();" class="text-[11px] text-slate-400 hover:text-rose-400 px-2 py-0.5 rounded bg-slatebg-900">مسح</button>
+                  <i id="consoleChevron" class="fa-solid fa-chevron-up text-slate-400 text-[11px]"></i>
+                </div>
+              </div>
+              <div id="liveConsoleBody" class="hidden h-32 overflow-y-auto bg-slatebg-950 p-2.5 font-mono text-xs space-y-1 border-t border-slatebg-700" dir="ltr">
+                <div class="text-slate-500 italic">// Console ready. Any console.log() or runtime errors will appear here...</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- M11: Project Notes, Tags & Checklist Drawer -->
+        <aside id="projectMetaDrawer" class="hidden w-80 bg-slatebg-850 border-r border-slatebg-600 flex-col h-full overflow-y-auto p-4 space-y-5 shrink-0 z-20">
+          <div class="flex items-center justify-between border-b border-slatebg-700 pb-3">
+            <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+              <i class="fa-solid fa-clipboard-check text-pink-400"></i>
+              <span>إدارة ومهام المشروع</span>
+            </h3>
+            <button onclick="toggleProjectDrawer()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <!-- Description & Tags -->
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 mb-1">وصف المشروع</label>
+              <textarea id="ideProjectDesc" rows="2" placeholder="اكتب وصفاً تقنياً للمشروع..." class="w-full p-2.5 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs text-white outline-none focus:border-indigo-500"></textarea>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 mb-1">الوسوم (Tags - مفصولة بفاصلة)</label>
+              <input type="text" id="ideProjectTags" placeholder="Landing, Tailwind, Dashboard" class="w-full px-3 py-2 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs font-mono text-indigo-300 outline-none focus:border-indigo-500" dir="ltr" />
+            </div>
+          </div>
+
+          <!-- Checklist -->
+          <div class="space-y-2.5">
+            <label class="block text-[11px] font-bold text-slate-400">قائمة المهام البرمجية (To-Do)</label>
+            <div class="flex gap-1.5">
+              <input type="text" id="newTaskInput" placeholder="أضف مهمة جديدة..." class="flex-1 px-2.5 py-1.5 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs text-white outline-none" onkeypress="if(event.key==='Enter') addProjectTask()" />
+              <button onclick="addProjectTask()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            <ul id="projectTasksList" class="space-y-1.5 max-h-48 overflow-y-auto"></ul>
+          </div>
+
+          <!-- Team Notes -->
+          <div class="space-y-2">
+            <label class="block text-[11px] font-bold text-slate-400">ملاحظات الفريق التقنية</label>
+            <textarea id="ideProjectNotes" rows="4" placeholder="سجل هنا أي ملاحظات حول التعديلات القادمة أو المتطلبات..." class="w-full p-2.5 rounded-xl bg-slatebg-900 border border-slatebg-600 text-xs text-slate-200 outline-none focus:border-indigo-500"></textarea>
+          </div>
+
+          <button onclick="saveCurrentProject(true)" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
+            حفظ كافة البيانات في الأرشيف
+          </button>
+        </aside>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================== MODALS FOR ENGINEERING FEATURES ==================== -->
+
+  <!-- M4: Component & Snippet Library Modal -->
+  <div id="snippetsModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slatebg-850 border border-slatebg-600 rounded-3xl max-w-3xl w-full p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between border-b border-slatebg-700 pb-3">
+        <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+          <i class="fa-solid fa-puzzle-piece text-indigo-400"></i>
+          <span>مكتبة القوالب والمكونات الجاهزة (1-Click Insert)</span>
+        </h3>
+        <button onclick="closeModal('snippetsModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto p-1">
+        <button onclick="insertSnippet('navbar')" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 text-right transition group">
+          <div class="font-bold text-sm text-white group-hover:text-indigo-400 mb-1">1. شريط تنقل متجاوب (Responsive Navbar)</div>
+          <p class="text-xs text-slate-400">هيدر احترافي مع روابط وأزرار متجاوبة باللغة العربية.</p>
+        </button>
+        <button onclick="insertSnippet('hero')" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 text-right transition group">
+          <div class="font-bold text-sm text-white group-hover:text-indigo-400 mb-1">2. قسم افتتاحي (Modern Hero Section)</div>
+          <p class="text-xs text-slate-400">واجهة رئيسية بتدرج لوني وزر دعوة لاتخاذ إجراء (CTA).</p>
+        </button>
+        <button onclick="insertSnippet('pricing')" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 text-right transition group">
+          <div class="font-bold text-sm text-white group-hover:text-indigo-400 mb-1">3. بطاقات خطط الأسعار (Pricing Cards)</div>
+          <p class="text-xs text-slate-400">شبكة عرض 3 باقات مع تمييز الباقة الاحترافية.</p>
+        </button>
+        <button onclick="insertSnippet('contact')" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 text-right transition group">
+          <div class="font-bold text-sm text-white group-hover:text-indigo-400 mb-1">4. نموذج تواصل تفاعلي (Contact Form)</div>
+          <p class="text-xs text-slate-400">نموذج إدخال متكامل مع تحقق فوري ورسالة تأكيد.</p>
+        </button>
+        <button onclick="insertSnippet('stats')" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 text-right transition group">
+          <div class="font-bold text-sm text-white group-hover:text-indigo-400 mb-1">5. شبكة إحصائيات لوحة تحكم (KPI Grid)</div>
+          <p class="text-xs text-slate-400">4 بطاقات إحصائية بتصميم حديث للوحات المعلومات.</p>
+        </button>
+        <button onclick="insertSnippet('footer')" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 text-right transition group">
+          <div class="font-bold text-sm text-white group-hover:text-indigo-400 mb-1">6. تذييل صفحة متكامل (Modern Footer)</div>
+          <p class="text-xs text-slate-400">فوتر منظم بأعمدة للروابط السريعة وحقوق الملكية.</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M5: 1-Click CDN Injector Modal -->
+  <div id="cdnModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slatebg-850 border border-slatebg-600 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slatebg-700 pb-3">
+        <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+          <i class="fa-solid fa-plug text-sky-400"></i>
+          <span>محقن المكتبات الخارجية السريع (1-Click CDN)</span>
+        </h3>
+        <button onclick="closeModal('cdnModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-400">اضغط على أي مكتبة ليتم حقن رابطها تلقائياً داخل وسم <span class="font-mono text-indigo-400">&lt;head&gt;</span> في ملف <span class="font-mono">index.html</span>:</p>
+      <div class="space-y-2">
+        <button onclick="injectCdn('tailwind')" class="w-full p-3 rounded-xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 flex items-center justify-between text-xs font-bold text-white transition">
+          <span>Tailwind CSS (v3 CDN)</span>
+          <span class="text-sky-400 font-mono">+ إضافة</span>
+        </button>
+        <button onclick="injectCdn('fontawesome')" class="w-full p-3 rounded-xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 flex items-center justify-between text-xs font-bold text-white transition">
+          <span>Font Awesome 6.5 Icons</span>
+          <span class="text-sky-400 font-mono">+ إضافة</span>
+        </button>
+        <button onclick="injectCdn('cairo')" class="w-full p-3 rounded-xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 flex items-center justify-between text-xs font-bold text-white transition">
+          <span>Google Font: Cairo & Tajawal</span>
+          <span class="text-sky-400 font-mono">+ إضافة</span>
+        </button>
+        <button onclick="injectCdn('bootstrap')" class="w-full p-3 rounded-xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 flex items-center justify-between text-xs font-bold text-white transition">
+          <span>Bootstrap 5.3 RTL CSS</span>
+          <span class="text-sky-400 font-mono">+ إضافة</span>
+        </button>
+        <button onclick="injectCdn('animate')" class="w-full p-3 rounded-xl bg-slatebg-900 hover:bg-slatebg-700 border border-slatebg-600 flex items-center justify-between text-xs font-bold text-white transition">
+          <span>Animate.css (حركات جاهزة)</span>
+          <span class="text-sky-400 font-mono">+ إضافة</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M8: Code Audit & Linter Modal -->
+  <div id="auditModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slatebg-850 border border-slatebg-600 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slatebg-700 pb-3">
+        <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+          <i class="fa-solid fa-stethoscope text-emerald-400"></i>
+          <span>تقرير فحص جودة الكود والـ SEO</span>
+        </h3>
+        <button onclick="closeModal('auditModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="auditScoreBanner" class="p-4 rounded-2xl bg-slatebg-900 border border-slatebg-600 flex items-center justify-between"></div>
+      <ul id="auditResultsList" class="space-y-2 max-h-64 overflow-y-auto text-xs"></ul>
+    </div>
+  </div>
+
+  <!-- M3: Version History Modal -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slatebg-850 border border-slatebg-600 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slatebg-700 pb-3">
+        <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-orange-400"></i>
+          <span>سجل الإصدارات واللقطات المحفوظة (Snapshots)</span>
+        </h3>
+        <button onclick="closeModal('historyModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-400">يتم حفظ لقطة تلقائية في كل مرة تضغط فيها على "حفظ ولقطة". يمكنك استعادة أي إصدار سابق:</p>
+      <div id="versionHistoryList" class="space-y-2 max-h-72 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- M14: Multi-Format Export, Google Sites & Share Link Modal -->
+  <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slatebg-850 border border-slatebg-600 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between border-b border-slatebg-700 pb-3">
+        <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+          <i class="fa-solid fa-share-nodes text-indigo-400"></i>
+          <span>التصدير والنشر والمشاركة الذكية</span>
+        </h3>
+        <button onclick="closeModal('exportModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="downloadBundledHtml()" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-indigo-600/20 border border-slatebg-600 hover:border-indigo-500 text-right transition">
+          <div class="text-sm font-bold text-white mb-1"><i class="fa-solid fa-file-code text-emerald-400 ml-1.5"></i>تحميل ملف HTML مدمج</div>
+          <p class="text-xs text-slate-400">يدمج HTML + CSS + JS في ملف واحد جاهز للرفع على أي استضافة.</p>
+        </button>
+
+        <button onclick="copyGoogleSitesEmbed()" class="p-4 rounded-2xl bg-slatebg-900 hover:bg-indigo-600/20 border border-slatebg-600 hover:border-indigo-500 text-right transition">
+          <div class="text-sm font-bold text-white mb-1"><i class="fa-brands fa-google text-amber-400 ml-1.5"></i>نسخ كود تضمين Google Sites</div>
+          <p class="text-xs text-slate-400">ينسخ الكود المدمج بالكامل للصقه في أداة Embed داخل Google Sites.</p>
+        </button>
+      </div>
+
+      <!-- Shareable URL Generator -->
+      <div class="p-4 rounded-2xl bg-slatebg-900 border border-slatebg-600 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-white"><i class="fa-solid fa-link text-indigo-400 ml-1"></i>رابط مشاركة مباشر للمشروع (Encoded URL)</span>
+          <button onclick="generateAndCopyShareUrl()" class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">توليد ونسخ الرابط</button>
+        </div>
+        <input type="text" id="shareUrlOutput" readonly dir="ltr" placeholder="اضغط توليد الرابط لإنشاء رابط يحتوي على المشروع..." class="w-full px-3 py-2 rounded-xl bg-slatebg-950 border border-slatebg-700 text-[11px] font-mono text-slate-300 outline-none" />
+      </div>
+
+      <!-- Google Sites Quick Guide -->
+      <div class="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-slate-300 space-y-1">
+        <div class="font-bold text-indigo-300"><i class="fa-solid fa-circle-info ml-1"></i>خطوات النشر السريع على Google Sites:</div>
+        <p>1. اضغط <strong>"نسخ كود تضمين Google Sites"</strong> أعلاه. 2. افتح موقعك في Google Sites واختر <strong>إدراج (Insert) &larr; تضمين (Embed) &larr; تضمين رمز (Embed code)</strong> ثم الصق الكود واضغط نشر.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Full-Screen Preview Modal from Archive -->
+  <div id="quickPreviewModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-slatebg-850 border border-slatebg-600 rounded-2xl max-w-6xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 bg-slatebg-900 border-b border-slatebg-600 flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+          <h3 id="qpTitle" class="text-sm font-bold text-white">معاينة المشروع</h3>
+          <span id="qpMeta" class="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="qpOpenIdeBtn" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-code"></i><span>فتح في المحرر</span>
+          </button>
+          <button id="qpCloneBtn" class="px-3 py-1.5 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-slate-200 text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-code-branch"></i><span>استنساخ</span>
+          </button>
+          <button id="qpDownloadBtn" class="px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-download"></i><span>تحميل HTML</span>
+          </button>
+          <button onclick="closeQuickPreview()" class="p-2 rounded-xl bg-slatebg-700 hover:bg-rose-600 text-slate-300 hover:text-white transition">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 bg-white">
+        <iframe id="qpIframe" title="معاينة كاملة للمشروع" class="w-full h-full border-none"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slatebg-850 border border-slatebg-600 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <h3 class="text-base font-extrabold text-white mb-2 flex items-center gap-2">
+        <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+        <span>تأكيد حذف المشروع من الأرشيف</span>
+      </h3>
+      <p class="text-xs text-slate-300 mb-6 leading-relaxed">
+        هل أنت متأكد من حذف المشروع <span id="deleteProjTitleSpan" class="font-bold text-white"></span> نهائياً؟
+      </p>
+      <div class="flex justify-end gap-2.5">
+        <button onclick="closeModal('deleteModal')" class="px-4 py-2 rounded-xl bg-slatebg-700 hover:bg-slatebg-600 text-xs font-bold text-slate-200">إلغاء</button>
+        <button id="confirmDeleteActionBtn" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white">نعم، احذف المشروع</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== APPLICATION LOGIC ==================== -->
+  <script>
+    // 1. TEAM ROLES & ACCOUNTS (بدون أي أسماء أشخاص وهمية)
+    const TEAM_USERS = [
+      {
+        id: 'role-lead',
+        name: 'قائد التيم (Team Lead)',
+        email: 'admin@team-archive.com',
+        password: 'Admin@123',
+        role: 'System Architect',
+        badgeColor: 'bg-indigo-600'
+      },
+      {
+        id: 'role-fe',
+        name: 'مطور الواجهات (Frontend Dev)',
+        email: 'dev1@team-archive.com',
+        password: 'Dev1@123',
+        role: 'UI/HTML Specialist',
+        badgeColor: 'bg-emerald-600'
+      },
+      {
+        id: 'role-uiux',
+        name: 'مصمم التجربة (UI/UX Designer)',
+        email: 'dev2@team-archive.com',
+        password: 'Dev2@123',
+        role: 'Creative Developer',
+        badgeColor: 'bg-purple-600'
+      }
+    ];
+
+    // 2. STARTER PROJECTS IN ARCHIVE (بأسماء الأدوار التقنية فقط)
+    const INITIAL_PROJECTS = [
+      {
+        id: 'proj-init-1',
+        title: 'منصة إطلاق المنتجات الرقمية (SaaS Landing)',
+        description: 'صفحة هبوط احترافية متجاوبة بالكامل مع تأثيرات زجاجية وأقسام مميزات تفاعلية.',
+        status: 'Production',
+        priority: 'عالية',
+        pinned: true,
+        tags: ['Landing', 'SaaS', 'DarkUI'],
+        authorName: 'قائد التيم (Team Lead)',
+        authorEmail: 'admin@team-archive.com',
+        updatedAt: '2026-11-14 05:00 م',
+        notes: 'تم اعتماد التصميم الأساسي وجاهز للربط مع النطاق الرسمي أو التضمين في Google Sites.',
+        tasks: [
+          { text: 'مراجعة التجاوب على شاشات الهواتف', done: true },
+          { text: 'تحسين سرعة تحميل الخطوط العربية', done: true }
+        ],
+        html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة الإطلاق الرقمي</title>
+</head>
+<body>
+  <section class="hero">
+    <span class="pill">🚀 الإصدار القياسي المعتمد</span>
+    <h1>حوّل أفكار فريقك إلى تطبيقات ويب متكاملة</h1>
+    <p>بنية برمجية نظيفة، أداء فائق السرعة، وتصميم متجاوب يناسب جميع الشاشات.</p>
+    <div class="actions">
+      <button id="ctaBtn" class="btn-primary">ابدأ التجربة الآن</button>
+      <button class="btn-secondary" onclick="console.log('تم استعراض الوثائق التقنية')">الوثائق التقنية</button>
+    </div>
+  </section>
+</body>
+</html>`,
+        css: `* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1e1b4b, #090d16);
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.hero {
+  max-width: 680px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 28px;
+  padding: 48px 32px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+}
+.pill {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 18px;
+}
+h1 { font-size: 2.3rem; margin: 0 0 16px; line-height: 1.3; }
+p { color: #94a3b8; font-size: 1.05rem; line-height: 1.7; margin-bottom: 30px; }
+.actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+button {
+  padding: 13px 28px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+}
+.btn-primary { background: #4f46e5; color: #fff; }
+.btn-primary:hover { background: #4338ca; transform: translateY(-2px); }
+.btn-secondary { background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.15); }`,
+        js: `document.getElementById('ctaBtn').addEventListener('click', function() {
+  this.textContent = 'تم تفعيل بيئة العمل بنجاح ✓';
+  this.style.background = '#059669';
+  console.log('CTA Activated by user');
+});`,
+        history: []
+      },
+      {
+        id: 'proj-init-2',
+        title: 'لوحة تحكم تحليلات الأداء (Analytics Dashboard)',
+        description: 'واجهة عرض مؤشرات الأداء الرئيسية (KPIs) وجدول متابعة العمليات الحية.',
+        status: 'Review',
+        priority: 'متوسطة',
+        pinned: false,
+        tags: ['Dashboard', 'Admin', 'Grid'],
+        authorName: 'مطور الواجهات (Frontend Dev)',
+        authorEmail: 'dev1@team-archive.com',
+        updatedAt: '2026-11-14 03:45 م',
+        notes: 'بانتظار مراجعة قائد التيم لاعتماد تخطيط البطاقات الإحصائية.',
+        tasks: [
+          { text: 'ربط عدادات الإحصائيات بتحديث تفاعلي', done: true },
+          { text: 'إضافة وضع الطباعة للتقارير', done: false }
+        ],
+        html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم الأداء</title>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h2>📊 لوحة مؤشرات الأداء (KPIs)</h2>
+      <button onclick="refreshStats()">تحديث البيانات</button>
+    </header>
+    <div class="grid">
+      <div class="card"><span>المستخدمون النشطون</span><h3 id="stat1">14,820</h3></div>
+      <div class="card"><span>معدل التحويل</span><h3 id="stat2">94.6%</h3></div>
+      <div class="card"><span>المهام المنجزة</span><h3 id="stat3">328</h3></div>
+    </div>
+  </div>
+</body>
+</html>`,
+        css: `body { font-family: Tahoma, sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 24px; }
+.container { max-width: 900px; margin: auto; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+button { background: #10b981; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.card { background: #1e293b; border: 1px solid #334155; padding: 24px; border-radius: 16px; }
+.card span { color: #94a3b8; font-size: 13px; }
+.card h3 { font-size: 28px; margin: 10px 0 0; color: #38bdf8; }`,
+        js: `function refreshStats() {
+  const randomUsers = Math.floor(14000 + Math.random() * 2000);
+  document.getElementById('stat1').textContent = randomUsers.toLocaleString();
+  console.log('Stats refreshed:', randomUsers);
+}`,
+        history: []
+      },
+      {
+        id: 'proj-init-3',
+        title: 'نموذج تواصل وحجز استشارة تقنية',
+        description: 'نموذج تفاعلي مع تحقق ذكي من المدخلات وتصميم عصري قابل للتضمين المباشر.',
+        status: 'Draft',
+        priority: 'عادية',
+        pinned: false,
+        tags: ['Form', 'UI', 'Component'],
+        authorName: 'مصمم التجربة (UI/UX Designer)',
+        authorEmail: 'dev2@team-archive.com',
+        updatedAt: '2026-11-14 02:10 م',
+        notes: 'تجربة تباين الألوان وحقول الإدخال.',
+        tasks: [
+          { text: 'اختبار رسائل التحقق من البريد الإلكتروني', done: true }
+        ],
+        html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نموذج تواصل تقني</title>
+</head>
+<body>
+  <form id="contactForm">
+    <h2>تواصل مع فريق التطوير</h2>
+    <input type="text" id="senderName" placeholder="الاسم أو الجهة" required />
+    <input type="email" id="senderEmail" placeholder="البريد الإلكتروني" required />
+    <textarea rows="4" id="senderMsg" placeholder="تفاصيل المشروع المطلوب..." required></textarea>
+    <button type="submit">إرسال الطلب</button>
+    <p id="statusMsg"></p>
+  </form>
+</body>
+</html>`,
+        css: `body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #090d16; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 16px; }
+form { background: #111827; border: 1px solid #1f2937; padding: 32px; border-radius: 20px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+h2 { margin: 0 0 8px; color: #818cf8; }
+input, textarea { padding: 12px; border-radius: 10px; border: 1px solid #374151; background: #1f2937; color: #fff; font-family: inherit; }
+button { padding: 12px; border-radius: 10px; border: none; background: #4f46e5; color: #fff; font-weight: bold; cursor: pointer; }
+#statusMsg { margin: 0; font-size: 13px; color: #34d399; text-align: center; }`,
+        js: `document.getElementById('contactForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const name = document.getElementById('senderName').value;
+  document.getElementById('statusMsg').textContent = 'شكراً ' + name + '، تم استلام طلبك بنجاح!';
+  console.log('Form submitted by:', name);
+});`,
+        history: []
+      }
+    ];
+
+    // 3. STATE & STORAGE
+    const STORAGE_KEYS = {
+      USER: 'team_pro_user_v3',
+      PROJECTS: 'team_pro_projects_v3'
+    };
+
+    let currentUser = null;
+    let projects = [];
+    let activeProjectId = null;
+    let activeFileTab = 'html'; // 'html' | 'css' | 'js'
+    let archiveViewMode = 'grid'; // 'grid' | 'table'
+    let isPreviewFullscreen = false;
+    let projectToDeleteId = null;
+
+    // Editor Buffer for current active project
+    let editorBuffers = { html: '', css: '', js: '' };
+    let currentProjectTasks = [];
+
+    // 4. INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      loadProjects();
+      checkSharedUrlPayload();
+      checkSession();
+      bindIdeEvents();
+    });
+
+    // Check if opened via a shared Base64 URL Hash
+    function checkSharedUrlPayload() {
+      if (window.location.hash && window.location.hash.startsWith('#share=')) {
+        try {
+          const encoded = window.location.hash.replace('#share=', '');
+          const decodedJson = decodeURIComponent(escape(atob(encoded)));
+          const sharedProj = JSON.parse(decodedJson);
+          if (sharedProj && sharedProj.title && sharedProj.html !== undefined) {
+            const exists = projects.some(p => p.title === sharedProj.title && p.html === sharedProj.html);
+            if (!exists) {
+              sharedProj.id = 'proj-shared-' + Date.now();
+              sharedProj.updatedAt = formatNow();
+              projects.unshift(sharedProj);
+              saveProjectsToStorage();
+              showToast(`تم استيراد المشروع المشترك "${sharedProj.title}" إلى الأرشيف!`, 'success');
+            }
+            history.replaceState(null, null, ' ');
+          }
+        } catch (e) {
+          console.warn('Invalid share hash');
+        }
+      }
+    }
+
+    // 5. AUTHENTICATION
+    function togglePasswordVisibility() {
+      const inp = document.getElementById('passwordInput');
+      const icon = document.getElementById('eyeIcon');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        inp.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('emailInput').value.trim().toLowerCase();
+      const pass = document.getElementById('passwordInput').value;
+      const errBox = document.getElementById('loginError');
+
+      const user = TEAM_USERS.find(u => u.email.toLowerCase() === email && u.password === pass);
+      if (!user) {
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      errBox.classList.add('hidden');
+      currentUser = user;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      enterWorkspace();
+      showToast(`مرحباً بك، ${user.name}`, 'success');
+    });
+
+    function checkSession() {
+      const saved = localStorage.getItem(STORAGE_KEYS.USER);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const valid = TEAM_USERS.find(u => u.email === parsed.email);
+          if (valid) {
+            currentUser = valid;
+            enterWorkspace();
+          }
+        } catch (e) {
+          localStorage.removeItem(STORAGE_KEYS.USER);
+        }
+      }
+    }
+
+    function enterWorkspace() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      const ws = document.getElementById('appWorkspace');
+      ws.classList.remove('hidden');
+      ws.classList.add('flex');
+
+      document.getElementById('currentUserName').textContent = currentUser.name;
+      document.getElementById('currentUserRole').textContent = currentUser.role;
+      document.getElementById('currentUserEmail').textContent = currentUser.email;
+      document.getElementById('userAvatar').className = `w-7 h-7 rounded-lg ${currentUser.badgeColor} text-white flex items-center justify-center font-bold text-xs`;
+
+      updateDashboardAnalytics();
+      renderArchiveExplorer();
+
+      if (projects.length > 0 && !activeProjectId) {
+        loadProjectIntoIde(projects[0].id, false);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      currentUser = null;
+      document.getElementById('appWorkspace').classList.add('hidden');
+      document.getElementById('appWorkspace').classList.remove('flex');
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('emailInput').value = '';
+      document.getElementById('passwordInput').value = '';
+      showToast('تم تسجيل الخروج بنجاح', 'info');
+    }
+
+    // 6. VIEW SWITCHING (Archive Explorer <-> Pro IDE)
+    function switchMainView(view) {
+      const archiveView = document.getElementById('archiveExplorerView');
+      const ideView = document.getElementById('ideWorkspaceView');
+      const navArchiveBtn = document.getElementById('navArchiveBtn');
+      const navEditorBtn = document.getElementById('navEditorBtn');
+
+      if (view === 'archive') {
+        archiveView.classList.remove('hidden');
+        ideView.classList.add('hidden');
+        ideView.classList.remove('flex');
+
+        navArchiveBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm';
+        navEditorBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-300 hover:text-white';
+        updateDashboardAnalytics();
+        renderArchiveExplorer();
+      } else {
+        archiveView.classList.add('hidden');
+        ideView.classList.remove('hidden');
+        ideView.classList.add('flex');
+
+        navEditorBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm';
+        navArchiveBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-300 hover:text-white';
+        renderLivePreview(false);
+      }
+    }
+
+    // 7. ARCHIVE STORAGE & ANALYTICS (M15)
+    function loadProjects() {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROJECTS);
+      if (raw) {
+        try {
+          projects = JSON.parse(raw);
+        } catch (e) {
+          projects = [...INITIAL_PROJECTS];
+        }
+      } else {
+        projects = [...INITIAL_PROJECTS];
+        saveProjectsToStorage();
+      }
+    }
+
+    function saveProjectsToStorage() {
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+      updateDashboardAnalytics();
+    }
+
+    function updateDashboardAnalytics() {
+      document.getElementById('headerArchiveCount').textContent = projects.length;
+      document.getElementById('statTotalProjects').textContent = projects.length;
+      document.getElementById('statProdProjects').textContent = projects.filter(p => p.status === 'Production').length;
+
+      let totalLines = 0;
+      let totalBytes = 0;
+      projects.forEach(p => {
+        const combined = (p.html || '') + '\n' + (p.css || '') + '\n' + (p.js || '');
+        totalLines += combined.split('\n').length;
+        totalBytes += new Blob([combined]).size;
+      });
+
+      document.getElementById('statTotalLines').textContent = totalLines.toLocaleString();
+      document.getElementById('statTotalSize').textContent = totalBytes < 1024 ? `${totalBytes} B` : `${(totalBytes / 1024).toFixed(1)} KB`;
+    }
+
+    function setArchiveViewMode(mode) {
+      archiveViewMode = mode;
+      const gridBtn = document.getElementById('viewGridBtn');
+      const tableBtn = document.getElementById('viewTableBtn');
+      const gridCont = document.getElementById('archiveGridContainer');
+      const tableCont = document.getElementById('archiveTableContainer');
+
+      if (mode === 'grid') {
+        gridBtn.className = 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold transition flex items-center gap-1.5';
+        tableBtn.className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white text-xs font-bold transition flex items-center gap-1.5';
+        gridCont.classList.remove('hidden');
+        tableCont.classList.add('hidden');
+      } else {
+        tableBtn.className = 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold transition flex items-center gap-1.5';
+        gridBtn.className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white text-xs font-bold transition flex items-center gap-1.5';
+        gridCont.classList.add('hidden');
+        tableCont.classList.remove('hidden');
+      }
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'Production') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">جاهز للنشر</span>';
+      if (status === 'Review') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">قيد المراجعة</span>';
+      return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">مسودة</span>';
+    }
+
+    function renderArchiveExplorer() {
+      const q = (document.getElementById('archiveSearchInput')?.value || '').trim().toLowerCase();
+      const scope = document.getElementById('filterScopeSelect')?.value || 'ALL';
+      const statusFilter = document.getElementById('filterStatusSelect')?.value || 'ALL';
+
+      // Sort pinned projects first
+      const sorted = [...projects].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+      const filtered = sorted.filter(p => {
+        const matchText =
+          p.title.toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q) ||
+          (p.tags || []).some(t => t.toLowerCase().includes(q)) ||
+          (p.html || '').toLowerCase().includes(q);
+
+        let matchScope = true;
+        if (scope === 'PINNED') matchScope = !!p.pinned;
+        if (scope === 'MINE') matchScope = currentUser && p.authorEmail === currentUser.email;
+
+        let matchStatus = true;
+        if (statusFilter !== 'ALL') matchStatus = p.status === statusFilter;
+
+        return matchText && matchScope && matchStatus;
+      });
+
+      const gridCont = document.getElementById('archiveGridContainer');
+      const tableBody = document.getElementById('archiveTableBody');
+
+      if (filtered.length === 0) {
+        gridCont.innerHTML = `
+          <div class="col-span-full bg-slatebg-850 border border-slatebg-600 rounded-3xl p-12 text-center">
+            <i class="fa-regular fa-folder-open text-4xl text-slate-500 mb-3"></i>
+            <h3 class="text-base font-bold text-white mb-1">لا توجد مشاريع مطابقة للبحث</h3>
+            <p class="text-xs text-slate-400 mb-4">قم بتغيير خيارات الفلترة أو أنشئ مشروعاً جديداً الآن.</p>
+            <button onclick="createNewProject(true)" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">إنشاء مشروع جديد</button>
+          </div>`;
+        tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">لا توجد مشاريع مطابقة</td></tr>`;
+        return;
+      }
+
+      // Render Cards
+      gridCont.innerHTML = filtered.map(p => {
+        const tagsHtml = (p.tags || []).slice(0, 3).map(t => `<span class="px-2 py-0.5 rounded bg-slatebg-900 text-indigo-300 font-mono text-[10px] border border-slatebg-700">#${escapeHtml(t)}</span>`).join('');
+        return `
+          <div class="bg-slatebg-850 border ${p.pinned ? 'border-amber-500/50' : 'border-slatebg-600'} rounded-2xl p-5 flex flex-col justify-between hover:border-indigo-500/60 transition shadow-lg group">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2">
+                  ${getStatusBadge(p.status)}
+                  <span class="text-[10px] text-slate-400 font-bold">أولوية ${p.priority || 'متوسطة'}</span>
+                </div>
+                <!-- M12: Pin / Star Toggle -->
+                <button onclick="togglePinProject('${p.id}')" class="text-sm ${p.pinned ? 'text-amber-400' : 'text-slate-500 hover:text-amber-300'} transition" title="تثبيت المشروع في الأعلى">
+                  <i class="fa-solid fa-star"></i>
+                </button>
+              </div>
+
+              <h3 class="text-base font-extrabold text-white group-hover:text-indigo-400 transition mb-1.5 line-clamp-1">${escapeHtml(p.title)}</h3>
+              <p class="text-xs text-slate-400 leading-relaxed mb-3 line-clamp-2 min-h-[36px]">${escapeHtml(p.description || 'مشروع ويب متعدد الملفات محفوظ في أرشيف الفريق.')}</p>
+
+              <div class="flex flex-wrap gap-1.5 mb-4">${tagsHtml}</div>
+            </div>
+
+            <div class="pt-3 border-t border-slatebg-700 space-y-3">
+              <div class="flex items-center justify-between text-[11px] text-slate-400">
+                <span class="font-semibold text-slate-300"><i class="fa-solid fa-user-gear text-indigo-400 ml-1"></i>${escapeHtml(p.authorName)}</span>
+                <span dir="ltr" class="font-mono text-[10px]">${p.updatedAt}</span>
+              </div>
+
+              <div class="grid grid-cols-5 gap-1.5">
+                <button onclick="loadProjectIntoIde('${p.id}', true)" class="col-span-2 py-2 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1">
+                  <i class="fa-solid fa-code"></i><span>تطوير</span>
+                </button>
+                <button onclick="openQuickPreview('${p.id}')" class="py-2 rounded-xl bg-slatebg-700 hover:bg-sky-600 text-slate-200 hover:text-white text-xs transition flex items-center justify-center" title="معاينة كاملة">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <!-- M13: Clone / Fork -->
+                <button onclick="cloneProject('${p.id}')" class="py-2 rounded-xl bg-slatebg-700 hover:bg-purple-600 text-slate-200 hover:text-white text-xs transition flex items-center justify-center" title="استنساخ المشروع (Fork)">
+                  <i class="fa-solid fa-code-branch"></i>
+                </button>
+                <button onclick="promptDeleteProject('${p.id}')" class="py-2 rounded-xl bg-slatebg-700 hover:bg-rose-600 text-slate-200 hover:text-white text-xs transition flex items-center justify-center" title="حذف">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render Table
+      tableBody.innerHTML = filtered.map(p => `
+        <tr class="hover:bg-slatebg-900/60 transition">
+          <td class="py-3.5 px-4">
+            <div class="font-bold text-white flex items-center gap-2">
+              <button onclick="togglePinProject('${p.id}')" class="${p.pinned ? 'text-amber-400' : 'text-slate-600'}"><i class="fa-solid fa-star"></i></button>
+              <span>${escapeHtml(p.title)}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">${escapeHtml(p.description || '—')}</div>
+          </td>
+          <td class="py-3.5 px-4">${getStatusBadge(p.status)} <span class="text-[11px] text-slate-400 mr-1">(${p.priority})</span></td>
+          <td class="py-3.5 px-4 font-semibold text-slate-300">${escapeHtml(p.authorName)}</td>
+          <td class="py-3.5 px-4 font-mono text-[11px] text-slate-400" dir="ltr">${p.updatedAt}</td>
+          <td class="py-3.5 px-4">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="loadProjectIntoIde('${p.id}', true)" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold">فتح</button>
+              <button onclick="openQuickPreview('${p.id}')" class="p-1.5 rounded-lg bg-slatebg-700 hover:bg-sky-600 text-white" title="معاينة"><i class="fa-solid fa-eye"></i></button>
+              <button onclick="cloneProject('${p.id}')" class="p-1.5 rounded-lg bg-slatebg-700 hover:bg-purple-600 text-white" title="استنساخ"><i class="fa-solid fa-code-branch"></i></button>
+              <button onclick="promptDeleteProject('${p.id}')" class="p-1.5 rounded-lg bg-slatebg-700 hover:bg-rose-600 text-white" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // M12: Pin / Unpin Project
+    function togglePinProject(id) {
+      const idx = projects.findIndex(p => p.id === id);
+      if (idx === -1) return;
+      projects[idx].pinned = !projects[idx].pinned;
+      saveProjectsToStorage();
+      renderArchiveExplorer();
+      showToast(projects[idx].pinned ? 'تم تثبيت المشروع في أعلى الأرشيف ⭐' : 'تم إلغاء تثبيت المشروع', 'info');
+    }
+
+    // M13: Clone / Fork Project
+    function cloneProject(id) {
+      const orig = projects.find(p => p.id === id);
+      if (!orig) return;
+      const copy = JSON.parse(JSON.stringify(orig));
+      copy.id = 'proj-fork-' + Date.now();
+      copy.title = `${orig.title} (نسخة مستنسخة)`;
+      copy.pinned = false;
+      copy.status = 'Draft';
+      copy.authorName = currentUser ? currentUser.name : orig.authorName;
+      copy.authorEmail = currentUser ? currentUser.email : orig.authorEmail;
+      copy.updatedAt = formatNow();
+      copy.history = [];
+
+      projects.unshift(copy);
+      saveProjectsToStorage();
+      renderArchiveExplorer();
+      showToast(`تم استنساخ "${orig.title}" بنجاح!`, 'success');
+    }
+
+    // Quick Preview Modal
+    function openQuickPreview(id) {
+      const p = projects.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('qpTitle').textContent = p.title;
+      document.getElementById('qpMeta').textContent = `${p.status} • ${p.authorName}`;
+      document.getElementById('qpIframe').srcdoc = buildCombinedHtml(p.html, p.css, p.js, false);
+
+      document.getElementById('qpOpenIdeBtn').onclick = () => { closeQuickPreview(); loadProjectIntoIde(p.id, true); };
+      document.getElementById('qpCloneBtn').onclick = () => { closeQuickPreview(); cloneProject(p.id); };
+      document.getElementById('qpDownloadBtn').onclick = () => {
+        triggerDownload(`${sanitizeFilename(p.title)}.html`, buildCombinedHtml(p.html, p.css, p.js, false), 'text/html');
+      };
+
+      document.getElementById('quickPreviewModal').classList.remove('hidden');
+    }
+
+    function closeQuickPreview() {
+      document.getElementById('quickPreviewModal').classList.add('hidden');
+      document.getElementById('qpIframe').srcdoc = '';
+    }
+
+    // Delete Project
+    function promptDeleteProject(id) {
+      const p = projects.find(x => x.id === id);
+      if (!p) return;
+      projectToDeleteId = id;
+      document.getElementById('deleteProjTitleSpan').textContent = `"${p.title}"`;
+      openModal('deleteModal');
+    }
+
+    document.getElementById('confirmDeleteActionBtn').addEventListener('click', () => {
+      if (!projectToDeleteId) return;
+      projects = projects.filter(p => p.id !== projectToDeleteId);
+      saveProjectsToStorage();
+      renderArchiveExplorer();
+      closeModal('deleteModal');
+      showToast('تم حذف المشروع من الأرشيف', 'info');
+    });
+
+    // Export / Import JSON Archive
+    function exportArchiveJson() {
+      const data = {
+        platform: 'Team HTML Archive Pro',
+        exportedAt: new Date().toISOString(),
+        exportedBy: currentUser ? currentUser.name : 'Team',
+        projects
+      };
+      triggerDownload(`team-archive-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2), 'application/json');
+      showToast('تم تصدير نسخة الأرشيف الكاملة (JSON)', 'success');
+    }
+
+    function importArchiveJson(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          const list = Array.isArray(parsed) ? parsed : parsed.projects;
+          if (!Array.isArray(list)) throw new Error('Invalid');
+          let added = 0;
+          list.forEach(item => {
+            if (item && item.title) {
+              item.id = 'proj-imp-' + Date.now() + Math.random().toString(36).slice(2, 5);
+              projects.unshift(item);
+              added++;
+            }
+          });
+          saveProjectsToStorage();
+          renderArchiveExplorer();
+          showToast(`تم استيراد ${added} مشروع إلى الأرشيف!`, 'success');
+        } catch (err) {
+          showToast('خطأ في قراءة ملف JSON', 'error');
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    // 8. MULTI-FILE PRO IDE LOGIC (M1, M2, M3, M4, M5, M6, M7, M8, M9, M11, M14)
+    function createNewProject(switchToIde = false) {
+      const newProj = {
+        id: 'proj-' + Date.now(),
+        title: 'مشروع ويب جديد',
+        description: '',
+        status: 'Draft',
+        priority: 'متوسطة',
+        pinned: false,
+        tags: ['HTML5', 'New'],
+        authorName: currentUser ? currentUser.name : 'عضو الفريق',
+        authorEmail: currentUser ? currentUser.email : 'team@archive.com',
+        updatedAt: formatNow(),
+        notes: '',
+        tasks: [],
+        html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مشروع جديد</title>
+</head>
+<body>
+  <main class="box">
+    <h1>مرحباً بك في بيئة التطوير المتكاملة 🚀</h1>
+    <p>اكتب أكواد HTML و CSS و JavaScript في التبويبات المجاورة وشاهد النتيجة فوراً.</p>
+  </main>
+</body>
+</html>`,
+        css: `body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: #0f172a;
+  color: #f8fafc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+.box {
+  background: #1e293b;
+  border: 1px solid #334155;
+  padding: 2.5rem;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 520px;
+}`,
+        js: `console.log('Project initialized successfully!');`,
+        history: []
+      };
+
+      projects.unshift(newProj);
+      saveProjectsToStorage();
+      loadProjectIntoIde(newProj.id, switchToIde);
+      showToast('تم إنشاء مشروع جديد متعدد الملفات', 'success');
+    }
+
+    function loadProjectIntoIde(id, openView = true) {
+      const p = projects.find(x => x.id === id);
+      if (!p) return;
+
+      activeProjectId = p.id;
+      editorBuffers = {
+        html: p.html || '',
+        css: p.css || '',
+        js: p.js || ''
+      };
+      currentProjectTasks = JSON.parse(JSON.stringify(p.tasks || []));
+
+      document.getElementById('ideProjectTitle').value = p.title;
+      document.getElementById('ideProjectStatus').value = p.status || 'Draft';
+      document.getElementById('ideProjectPriority').value = p.priority || 'متوسطة';
+      document.getElementById('ideProjectDesc').value = p.description || '';
+      document.getElementById('ideProjectTags').value = (p.tags || []).join(', ');
+      document.getElementById('ideProjectNotes').value = p.notes || '';
+
+      renderTasksList();
+      switchEditorTab('html', false);
+      clearLiveConsole();
+      renderLivePreview(false);
+
+      if (openView) {
+        switchMainView('editor');
+      }
+    }
+
+    // M1: Switch between index.html, style.css, script.js
+    function switchEditorTab(tab, savePrev = true) {
+      const textarea = document.getElementById('ideCodeTextarea');
+      if (savePrev && activeFileTab) {
+        editorBuffers[activeFileTab] = textarea.value;
+      }
+
+      activeFileTab = tab;
+      textarea.value = editorBuffers[tab] || '';
+
+      document.querySelectorAll('.file-tab').forEach(btn => {
+        if (btn.dataset.ftab === tab) {
+          btn.className = 'file-tab px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slatebg-900 text-white border border-indigo-500 flex items-center gap-1.5';
+        } else {
+          btn.className = 'file-tab px-3 py-1 rounded-lg text-xs font-mono font-bold text-slate-400 hover:text-white flex items-center gap-1.5';
+        }
+      });
+
+      updateGutterLines();
+      updateFindCount();
+    }
+
+    function bindIdeEvents() {
+      const textarea = document.getElementById('ideCodeTextarea');
+      const gutter = document.getElementById('ideLineGutter');
+
+      textarea.addEventListener('input', () => {
+        editorBuffers[activeFileTab] = textarea.value;
+        updateGutterLines();
+        updateCursorInfo();
+        renderLivePreview(false);
+      });
+
+      textarea.addEventListener('scroll', () => {
+        gutter.scrollTop = textarea.scrollTop;
+      });
+
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const s = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          textarea.value = textarea.value.substring(0, s) + '  ' + textarea.value.substring(end);
+          textarea.selectionStart = textarea.selectionEnd = s + 2;
+          editorBuffers[activeFileTab] = textarea.value;
+          updateGutterLines();
+        }
+      });
+
+      textarea.addEventListener('click', updateCursorInfo);
+      textarea.addEventListener('keyup', updateCursorInfo);
+
+      // Listen to console messages posted from Live Preview Iframe (M2)
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.source === 'TEAM_IDE_CONSOLE') {
+          appendConsoleMessage(event.data.level, event.data.message);
+        }
+      });
+    }
+
+    function updateGutterLines() {
+      const lines = document.getElementById('ideCodeTextarea').value.split('\n').length;
+      document.getElementById('ideLineGutter').innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+    }
+
+    function updateCursorInfo() {
+      const ta = document.getElementById('ideCodeTextarea');
+      const sub = ta.value.substring(0, ta.selectionStart).split('\n');
+      document.getElementById('ideCursorPos').textContent = `Ln ${sub.length}, Col ${sub[sub.length - 1].length + 1}`;
+    }
+
+    // Build unified HTML combining HTML + CSS + JS (+ Console Interceptor if preview)
+    function buildCombinedHtml(htmlCode, cssCode, jsCode, injectConsoleHook = true) {
+      const consoleHookScript = injectConsoleHook ? `
+<script>
+(function(){
+  const send = (level, args) => {
+    try {
+      const msg = Array.from(args).map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+      window.parent.postMessage({ source: 'TEAM_IDE_CONSOLE', level, message: msg }, '*');
+    } catch(e){}
+  };
+  const origLog = console.log, origWarn = console.warn, origErr = console.error;
+  console.log = function(){ send('log', arguments); origLog.apply(console, arguments); };
+  console.warn = function(){ send('warn', arguments); origWarn.apply(console, arguments); };
+  console.error = function(){ send('error', arguments); origErr.apply(console, arguments); };
+  window.onerror = function(msg, url, line){
+    send('error', [msg + ' (Line ' + line + ')']);
+  };
+})();
+<\/script>` : '';
+
+      let output = htmlCode || '';
+      const styleTag = cssCode && cssCode.trim() ? `<style>\n${cssCode}\n</style>` : '';
+      const scriptTag = jsCode && jsCode.trim() ? `<script>\n${jsCode}\n<\/script>` : '';
+
+      if (output.includes('</head>')) {
+        output = output.replace('</head>', `${consoleHookScript}\n${styleTag}\n</head>`);
+      } else {
+        output = `${consoleHookScript}\n${styleTag}\n` + output;
+      }
+
+      if (output.includes('</body>')) {
+        output = output.replace('</body>', `${scriptTag}\n</body>`);
+      } else {
+        output = output + `\n${scriptTag}`;
+      }
+
+      return output;
+    }
+
+    function renderLivePreview(manual = false) {
+      editorBuffers[activeFileTab] = document.getElementById('ideCodeTextarea').value;
+      if (manual) clearLiveConsole();
+      const fullDoc = buildCombinedHtml(editorBuffers.html, editorBuffers.css, editorBuffers.js, true);
+      document.getElementById('ideLiveIframe').srcdoc = fullDoc;
+      if (manual) showToast('تم تحديث المعاينة الحية', 'info');
+    }
+
+    // M2: Live Console Helpers
+    let consoleMsgCounter = 0;
+    function appendConsoleMessage(level, text) {
+      const body = document.getElementById('liveConsoleBody');
+      if (consoleMsgCounter === 0) body.innerHTML = '';
+      consoleMsgCounter++;
+      document.getElementById('consoleBadgeCount').textContent = consoleMsgCounter;
+
+      const colors = {
+        log: 'text-slate-200',
+        warn: 'text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded',
+        error: 'text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded font-bold'
+      };
+      const row = document.createElement('div');
+      row.className = colors[level] || colors.log;
+      row.textContent = `> [${level.toUpperCase()}] ${text}`;
+      body.appendChild(row);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function clearLiveConsole() {
+      consoleMsgCounter = 0;
+      document.getElementById('consoleBadgeCount').textContent = '0';
+      document.getElementById('liveConsoleBody').innerHTML = '<div class="text-slate-500 italic">// Console cleared.</div>';
+    }
+
+    function toggleConsoleBody() {
+      const body = document.getElementById('liveConsoleBody');
+      const chev = document.getElementById('consoleChevron');
+      body.classList.toggle('hidden');
+      chev.classList.toggle('fa-chevron-up');
+      chev.classList.toggle('fa-chevron-down');
+    }
+
+    // M3: Save Project & Create Snapshot in Version History
+    function saveCurrentProject(notify = true) {
+      if (!activeProjectId) return;
+      editorBuffers[activeFileTab] = document.getElementById('ideCodeTextarea').value;
+
+      const idx = projects.findIndex(p => p.id === activeProjectId);
+      if (idx === -1) return;
+
+      const title = document.getElementById('ideProjectTitle').value.trim() || 'مشروع بدون عنوان';
+      const status = document.getElementById('ideProjectStatus').value;
+      const priority = document.getElementById('ideProjectPriority').value;
+      const description = document.getElementById('ideProjectDesc').value.trim();
+      const tags = document.getElementById('ideProjectTags').value.split(',').map(t => t.trim()).filter(Boolean);
+      const notes = document.getElementById('ideProjectNotes').value;
+      const now = formatNow();
+
+      const historyList = projects[idx].history || [];
+      historyList.unshift({
+        snapId: 'snap-' + Date.now(),
+        timestamp: now,
+        author: currentUser ? currentUser.name : 'عضو التيم',
+        html: editorBuffers.html,
+        css: editorBuffers.css,
+        js: editorBuffers.js
+      });
+      // Keep last 15 snapshots
+      if (historyList.length > 15) historyList.pop();
+
+      projects[idx] = {
+        ...projects[idx],
+        title,
+        status,
+        priority,
+        description,
+        tags,
+        notes,
+        tasks: currentProjectTasks,
+        html: editorBuffers.html,
+        css: editorBuffers.css,
+        js: editorBuffers.js,
+        authorName: currentUser ? currentUser.name : projects[idx].authorName,
+        authorEmail: currentUser ? currentUser.email : projects[idx].authorEmail,
+        updatedAt: now,
+        history: historyList
+      };
+
+      saveProjectsToStorage();
+      if (notify) showToast(`تم حفظ المشروع وتسجيل لقطة إصدار جديدة ✓`, 'success');
+    }
+
+    function openHistoryModal() {
+      const p = projects.find(x => x.id === activeProjectId);
+      const listCont = document.getElementById('versionHistoryList');
+      if (!p || !p.history || p.history.length === 0) {
+        listCont.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">لا توجد لقطات محفوظة بعد. اضغط "حفظ ولقطة" لتسجيل إصدار.</div>';
+      } else {
+        listCont.innerHTML = p.history.map((snap, idx) => `
+          <div class="p-3 rounded-xl bg-slatebg-900 border border-slatebg-600 flex items-center justify-between text-xs">
+            <div>
+              <div class="font-bold text-white">إصدار #${p.history.length - idx} • <span class="text-indigo-400">${escapeHtml(snap.author)}</span></div>
+              <div class="text-[11px] font-mono text-slate-400 mt-0.5" dir="ltr">${snap.timestamp}</div>
+            </div>
+            <button onclick="restoreSnapshot('${snap.snapId}')" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold">استعادة</button>
+          </div>
+        `).join('');
+      }
+      openModal('historyModal');
+    }
+
+    function restoreSnapshot(snapId) {
+      const p = projects.find(x => x.id === activeProjectId);
+      if (!p) return;
+      const snap = (p.history || []).find(s => s.snapId === snapId);
+      if (!snap) return;
+
+      editorBuffers = { html: snap.html, css: snap.css, js: snap.js };
+      switchEditorTab(activeFileTab, false);
+      renderLivePreview(false);
+      closeModal('historyModal');
+      showToast('تمت استعادة الإصدار السابق بنجاح!', 'success');
+    }
+
+    // M4: Component Snippets
+    const SNIPPETS_MAP = {
+      navbar: `\n<nav style="display:flex;justify-content:space-between;align-items:center;padding:16px 32px;background:#0f172a;color:#fff;border-bottom:1px solid #1e293b;">\n  <strong style="font-size:18px;">اسم المشروع</strong>\n  <div style="display:flex;gap:20px;font-size:14px;">\n    <a href="#" style="color:#cbd5e1;text-decoration:none;">الرئيسية</a>\n    <a href="#" style="color:#cbd5e1;text-decoration:none;">المميزات</a>\n    <a href="#" style="color:#cbd5e1;text-decoration:none;">تواصل معنا</a>\n  </div>\n</nav>\n`,
+      hero: `\n<section style="text-align:center;padding:64px 20px;background:linear-gradient(135deg,#1e1b4b,#0f172a);color:#fff;">\n  <h1 style="font-size:2.4rem;margin-bottom:14px;">عنوان رئيسي جذاب للمشروع</h1>\n  <p style="color:#94a3b8;max-width:560px;margin:0 auto 24px;">وصف مختصر يوضح القيمة المضافة والخدمات التي يقدمها الموقع للزوار.</p>\n  <button style="padding:12px 28px;border-radius:10px;border:none;background:#4f46e5;color:#fff;font-weight:bold;cursor:pointer;">ابدأ الآن</button>\n</section>\n`,
+      pricing: `\n<section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;padding:40px 20px;max-width:960px;margin:auto;">\n  <div style="background:#1e293b;padding:24px;border-radius:16px;color:#fff;text-align:center;"><h3>الباقة الأساسية</h3><p style="font-size:28px;font-weight:bold;">$19</p><p style="color:#94a3b8;font-size:13px;">مناسبة للمشاريع الناشئة</p></div>\n  <div style="background:#312e81;border:2px solid #6366f1;padding:24px;border-radius:16px;color:#fff;text-align:center;"><h3>الباقة الاحترافية</h3><p style="font-size:28px;font-weight:bold;">$49</p><p style="color:#c7d2fe;font-size:13px;">الأكثر طلباً لفرق العمل</p></div>\n</section>\n`,
+      contact: `\n<form style="max-width:440px;margin:32px auto;padding:28px;background:#1e293b;border-radius:16px;color:#fff;display:flex;flex-direction:column;gap:12px;">\n  <h3>تواصل معنا</h3>\n  <input type="text" placeholder="الاسم الكامل" style="padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;">\n  <input type="email" placeholder="البريد الإلكتروني" style="padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;">\n  <textarea rows="3" placeholder="رسالتك..." style="padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;"></textarea>\n  <button type="submit" style="padding:12px;border-radius:8px;border:none;background:#10b981;color:#fff;font-weight:bold;">إرسال</button>\n</form>\n`,
+      stats: `\n<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;padding:24px;">\n  <div style="background:#1e293b;padding:20px;border-radius:14px;color:#fff;"><span style="color:#94a3b8;font-size:12px;">العملاء</span><h2 style="margin:6px 0 0;color:#38bdf8;">+2,450</h2></div>\n  <div style="background:#1e293b;padding:20px;border-radius:14px;color:#fff;"><span style="color:#94a3b8;font-size:12px;">المشاريع</span><h2 style="margin:6px 0 0;color:#34d399;">+180</h2></div>\n</div>\n`,
+      footer: `\n<footer style="padding:28px;text-align:center;background:#090d16;color:#64748b;font-size:13px;border-top:1px solid #1e293b;">\n  جميع الحقوق محفوظة &copy; 2026 — تم التطوير بواسطة الفريق\n</footer>\n`
+    };
+
+    function insertSnippet(key) {
+      switchEditorTab('html', true);
+      const ta = document.getElementById('ideCodeTextarea');
+      const snippet = SNIPPETS_MAP[key] || '';
+      if (ta.value.includes('</body>')) {
+        ta.value = ta.value.replace('</body>', `${snippet}\n</body>`);
+      } else {
+        ta.value += snippet;
+      }
+      editorBuffers.html = ta.value;
+      updateGutterLines();
+      renderLivePreview(false);
+      closeModal('snippetsModal');
+      showToast('تم إدراج المكون الجاهز في index.html', 'success');
+    }
+
+    // M5: 1-Click CDN Injector
+    const CDN_TAGS = {
+      tailwind: `<script src="https://cdn.tailwindcss.com"><\/script>`,
+      fontawesome: `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />`,
+      cairo: `<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />`,
+      bootstrap: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" />`,
+      animate: `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />`
+    };
+
+    function injectCdn(libKey) {
+      switchEditorTab('html', true);
+      const ta = document.getElementById('ideCodeTextarea');
+      const tag = CDN_TAGS[libKey];
+      if (!tag) return;
+
+      if (ta.value.includes(tag)) {
+        showToast('هذه المكتبة مضافة بالفعل في المشروع', 'info');
+        closeModal('cdnModal');
+        return;
+      }
+
+      if (ta.value.includes('</head>')) {
+        ta.value = ta.value.replace('</head>', `  ${tag}\n</head>`);
+      } else {
+        ta.value = `${tag}\n` + ta.value;
+      }
+      editorBuffers.html = ta.value;
+      updateGutterLines();
+      renderLivePreview(false);
+      closeModal('cdnModal');
+      showToast('تم حقن رابط المكتبة في <head> بنجاح!', 'success');
+    }
+
+    // M6: Viewport Simulator
+    function setSimulatorViewport(width, label) {
+      document.getElementById('ideLiveIframe').style.width = width;
+      document.getElementById('viewportDimBadge').textContent = label;
+    }
+
+    function togglePreviewFullscreen() {
+      const ed = document.getElementById('ideEditorPane');
+      const grid = document.getElementById('ideSplitGrid');
+      const icon = document.getElementById('previewExpandIcon');
+      isPreviewFullscreen = !isPreviewFullscreen;
+
+      if (isPreviewFullscreen) {
+        ed.classList.add('hidden');
+        grid.classList.remove('lg:grid-cols-2');
+        icon.classList.replace('fa-expand', 'fa-compress');
+      } else {
+        ed.classList.remove('hidden');
+        grid.classList.add('lg:grid-cols-2');
+        icon.classList.replace('fa-compress', 'fa-expand');
+      }
+    }
+
+    // M7: Format & Minify Code
+    function formatActiveCode() {
+      const ta = document.getElementById('ideCodeTextarea');
+      let code = ta.value;
+      if (activeFileTab === 'html') {
+        code = code.replace(/>\s+</g, '>\n<');
+      } else if (activeFileTab === 'css') {
+        code = code.replace(/\{\s*/g, ' {\n  ').replace(/;\s*/g, ';\n  ').replace(/\s*\}/g, '\n}\n');
+      }
+      ta.value = code.trim();
+      editorBuffers[activeFileTab] = ta.value;
+      updateGutterLines();
+      showToast('تم تنسيق وتنظيم الكود', 'info');
+    }
+
+    function minifyActiveCode() {
+      const ta = document.getElementById('ideCodeTextarea');
+      ta.value = ta.value.replace(/\n+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+      editorBuffers[activeFileTab] = ta.value;
+      updateGutterLines();
+      showToast('تم ضغط وتصغير الكود (Minify)', 'info');
+    }
+
+    // M8: Code Audit & SEO Linter
+    function runCodeAudit() {
+      editorBuffers[activeFileTab] = document.getElementById('ideCodeTextarea').value;
+      const html = editorBuffers.html || '';
+      const issues = [];
+      let score = 100;
+
+      if (!html.includes('<!DOCTYPE html>')) {
+        issues.push({ ok: false, text: 'يفضل إضافة إعلان <!DOCTYPE html> في بداية الملف.' });
+        score -= 10;
+      } else {
+        issues.push({ ok: true, text: 'إعلان <!DOCTYPE html> سليم وموجود.' });
+      }
+
+      if (!/<title>.*<\/title>/i.test(html)) {
+        issues.push({ ok: false, text: 'وسم <title> مفقود — مهم جداً لمحركات البحث (SEO).' });
+        score -= 15;
+      } else {
+        issues.push({ ok: true, text: 'عنوان الصفحة <title> متوفر.' });
+      }
+
+      if (!/name=["']viewport["']/i.test(html)) {
+        issues.push({ ok: false, text: 'وسم meta viewport مفقود — قد يؤثر على التجاوب في الهواتف.' });
+        score -= 15;
+      } else {
+        issues.push({ ok: true, text: 'إعدادات التجاوب (Viewport) مضبوطة بشكل صحيح.' });
+      }
+
+      const imgsWithoutAlt = (html.match(/<img(?![^>]*\balt=)[^>]*>/gi) || []).length;
+      if (imgsWithoutAlt > 0) {
+        issues.push({ ok: false, text: `تم اكتشاف ${imgsWithoutAlt} صورة بدون خاصية alt (إمكانية الوصول).` });
+        score -= 10;
+      } else {
+        issues.push({ ok: true, text: 'جميع الصور تحتوي على وصف بديل (alt) أو لا توجد صور مخالفة.' });
+      }
+
+      document.getElementById('auditScoreBanner').innerHTML = `
+        <div>
+          <div class="text-xs text-slate-400">تقييم جودة المشروع</div>
+          <div class="text-lg font-black ${score >= 85 ? 'text-emerald-400' : 'text-amber-400'}">${score} / 100</div>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-bold ${score >= 85 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">
+          ${score >= 85 ? 'ممتاز وجاهز للإنتاج' : 'يحتاج بعض التحسينات'}
+        </span>
+      `;
+
+      document.getElementById('auditResultsList').innerHTML = issues.map(i => `
+        <li class="p-3 rounded-xl bg-slatebg-900 border border-slatebg-700 flex items-center gap-2.5">
+          <i class="fa-solid ${i.ok ? 'fa-circle-check text-emerald-400' : 'fa-triangle-exclamation text-amber-400'}"></i>
+          <span class="text-slate-200">${i.text}</span>
+        </li>
+      `).join('');
+
+      openModal('auditModal');
+    }
+
+    // M9: Find & Replace
+    function toggleFindReplaceBar() {
+      document.getElementById('findReplaceBar').classList.toggle('hidden');
+      updateFindCount();
+    }
+
+    function updateFindCount() {
+      const q = document.getElementById('findInput').value;
+      const text = document.getElementById('ideCodeTextarea').value;
+      if (!q) {
+        document.getElementById('findMatchCount').textContent = '0 مطابقة';
+        return;
+      }
+      const matches = text.split(q).length - 1;
+      document.getElementById('findMatchCount').textContent = `${matches} مطابقة`;
+    }
+
+    function replaceNextMatch() {
+      const q = document.getElementById('findInput').value;
+      const rep = document.getElementById('replaceInput').value;
+      if (!q) return;
+      const ta = document.getElementById('ideCodeTextarea');
+      if (ta.value.includes(q)) {
+        ta.value = ta.value.replace(q, rep);
+        editorBuffers[activeFileTab] = ta.value;
+        updateGutterLines();
+        updateFindCount();
+        renderLivePreview(false);
+        showToast('تم استبدال المطابقة التالية', 'info');
+      }
+    }
+
+    function replaceAllMatches() {
+      const q = document.getElementById('findInput').value;
+      const rep = document.getElementById('replaceInput').value;
+      if (!q) return;
+      const ta = document.getElementById('ideCodeTextarea');
+      ta.value = ta.value.split(q).join(rep);
+      editorBuffers[activeFileTab] = ta.value;
+      updateGutterLines();
+      updateFindCount();
+      renderLivePreview(false);
+      showToast('تم استبدال جميع المطابقات في الملف', 'success');
+    }
+
+    // M11: Project Tasks & Notes Drawer
+    function toggleProjectDrawer() {
+      const drawer = document.getElementById('projectMetaDrawer');
+      drawer.classList.toggle('hidden');
+      drawer.classList.toggle('flex');
+    }
+
+    function renderTasksList() {
+      const ul = document.getElementById('projectTasksList');
+      if (currentProjectTasks.length === 0) {
+        ul.innerHTML = '<li class="text-[11px] text-slate-500 text-center py-2">لا توجد مهام مضافة بعد</li>';
+        return;
+      }
+      ul.innerHTML = currentProjectTasks.map((t, i) => `
+        <li class="flex items-center justify-between gap-2 p-2 rounded-lg bg-slatebg-900 border border-slatebg-700 text-xs">
+          <label class="flex items-center gap-2 cursor-pointer flex-1">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTaskDone(${i})" class="accent-indigo-500" />
+            <span class="${t.done ? 'line-through text-slate-500' : 'text-slate-200'}">${escapeHtml(t.text)}</span>
+          </label>
+          <button onclick="deleteTask(${i})" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-xmark"></i></button>
+        </li>
+      `).join('');
+    }
+
+    function addProjectTask() {
+      const inp = document.getElementById('newTaskInput');
+      const val = inp.value.trim();
+      if (!val) return;
+      currentProjectTasks.push({ text: val, done: false });
+      inp.value = '';
+      renderTasksList();
+    }
+
+    function toggleTaskDone(idx) {
+      currentProjectTasks[idx].done = !currentProjectTasks[idx].done;
+      renderTasksList();
+    }
+
+    function deleteTask(idx) {
+      currentProjectTasks.splice(idx, 1);
+      renderTasksList();
+    }
+
+    // M14: Multi-Format Export & Share URL
+    function openExportModal() {
+      document.getElementById('shareUrlOutput').value = '';
+      openModal('exportModal');
+    }
+
+    function downloadBundledHtml() {
+      editorBuffers[activeFileTab] = document.getElementById('ideCodeTextarea').value;
+      const title = sanitizeFilename(document.getElementById('ideProjectTitle').value || 'project');
+      const fullHtml = buildCombinedHtml(editorBuffers.html, editorBuffers.css, editorBuffers.js, false);
+      triggerDownload(`${title}.html`, fullHtml, 'text/html');
+      showToast(`تم تحميل ${title}.html المدمج بنجاح!`, 'success');
+    }
+
+    function copyGoogleSitesEmbed() {
+      editorBuffers[activeFileTab] = document.getElementById('ideCodeTextarea').value;
+      const fullHtml = buildCombinedHtml(editorBuffers.html, editorBuffers.css, editorBuffers.js, false);
+      copyTextToClipboard(fullHtml);
+      showToast('تم نسخ الكود المدمج! جاهز للصق في Google Sites (تضمين)', 'success');
+    }
+
+    function generateAndCopyShareUrl() {
+      editorBuffers[activeFileTab] = document.getElementById('ideCodeTextarea').value;
+      const payload = {
+        title: document.getElementById('ideProjectTitle').value.trim() || 'مشروع مشترك',
+        description: document.getElementById('ideProjectDesc').value.trim(),
+        status: document.getElementById('ideProjectStatus').value,
+        priority: document.getElementById('ideProjectPriority').value,
+        tags: ['Shared'],
+        authorName: currentUser ? currentUser.name : 'عضو الفريق',
+        authorEmail: currentUser ? currentUser.email : 'team@archive.com',
+        html: editorBuffers.html,
+        css: editorBuffers.css,
+        js: editorBuffers.js
+      };
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      const baseUrl = window.location.href.split('#')[0];
+      const shareUrl = `${baseUrl}#share=${encoded}`;
+      const out = document.getElementById('shareUrlOutput');
+      out.value = shareUrl;
+      copyTextToClipboard(shareUrl);
+      showToast('تم توليد ونسخ رابط المشاركة المباشر!', 'success');
+    }
+
+    // 9. UTILITIES
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function triggerDownload(filename, content, mime) {
+      const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function copyTextToClipboard(text) {
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+    }
+
+    function sanitizeFilename(name) {
+      return name.trim().replace(/[\\/:*?"<>|]/g, '_') || 'project';
+    }
+
+    function formatNow() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      let h = d.getHours();
+      const m = String(d.getMinutes()).padStart(2, '0');
+      const ampm = h >= 12 ? 'م' : 'ص';
+      h = h % 12 || 12;
+      return `${yyyy}-${mm}-${dd} ${String(h).padStart(2, '0')}:${m} ${ampm}`;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showToast(msg, type = 'info') {
+      const cont = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      const bg = type === 'success' ? 'bg-emerald-600 border-emerald-400' : type === 'error' ? 'bg-rose-600 border-rose-400' : 'bg-slatebg-800 border-slatebg-600';
+      el.className = `animate-toast pointer-events-auto px-4 py-3 rounded-xl border text-white text-xs font-bold shadow-2xl flex items-center gap-2 ${bg}`;
+      el.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i><span>${msg}</span>`;
+      cont.appendChild(el);
+      setTimeout(() => { el.remove(); }, 3200);
+    }
+  </script>
+</body>
+</html>
